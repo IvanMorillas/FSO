@@ -1,0 +1,417 @@
+
+#!/bin/bash
+
+#INICITALITZAR VARIABLES PER SABER SI EXISTEIXEN 
+existFila=0
+existColumna=0
+existPorteria=0
+existPosPaleta=0
+existMidaPaleta=0
+existPosPilota=0
+
+#METODE GETOPTS
+while getopts ':n:f:c:p:0:m:1:' opcio; do
+    case "${opcio}" in
+
+    n) nomFitxer="${OPTARG}";;
+
+    f) fila="${OPTARG}"
+       existFila=1;;
+
+    c) columna="${OPTARG}"
+       existColumna=1;;
+
+    p) porteria="${OPTARG}"
+       existPorteria=1;;
+
+    0) posPaleta="${OPTARG}"
+       existPosPaleta=1;;
+
+    m) midaPaleta="${OPTARG}"
+       existMidaPaleta=1;;
+
+    1) posPilota="${OPTARG}"
+       existPosPilota=1;;
+
+    *) echo "Invalid option: -$OPTARG" 
+       exit 1;;
+    esac
+done
+
+#SI EL FITXER JA EXISTEIX
+if [ -f $nomFitxer ]
+then
+
+#INTRODUIR CADA DADA EN UNA VARIABLE
+    newFila=$(awk 'NR==1' $nomFitxer | cut -d ' ' -f1)
+    newColumna=$(awk 'NR==1' $nomFitxer | cut -d ' ' -f2)
+    newPorteria=$(awk 'NR==1' $nomFitxer | cut -d ' ' -f3)
+    newPosPaletaFila=$(awk 'NR==2' $nomFitxer | cut -d ' ' -f1)
+    newPosPaletaColumna=$(awk 'NR==2' $nomFitxer | cut -d ' ' -f2)
+    newMidaPaleta=$(awk 'NR==2' $nomFitxer | cut -d ' ' -f3)
+    newPilotaFila=$(awk 'NR==3' $nomFitxer | cut -d ' ' -f1)
+    newPilotaColumna=$(awk 'NR==3' $nomFitxer | cut -d ' ' -f2)
+    newPilotaVelFila=$(awk 'NR==3' $nomFitxer | cut -d ' ' -f3)
+    newPilotaVelColumna=$(awk 'NR==3' $nomFitxer | cut -d ' ' -f4)
+    newPaleta=$(echo "$posPaleta" | tr ',' ' ')
+    newFilaPal=$(echo "$newPaleta" | cut -d ' ' -f1)
+    newColPal=$(echo "$newPaleta" | cut -d ' ' -f2)
+    newPilota=$(echo "$posPilota" | tr ',' ' ')
+    newFilaPil=$(echo "$posPilota" | cut -d ',' -f1)
+    newColPil=$(echo "$posPilota" | cut -d ',' -f2)
+    newVelFila=$(echo "$posPilota" | cut -d ',' -f3)
+    newVelColumna=$(echo "$posPilota" | cut -d ',' -f4)
+    newVeloFil=$(echo "$newVelFila*10" | bc)
+    newVeloCol=$(echo "$newVelColumna*10" | bc)
+    newVelFil=$(echo "$newVeloFil" | cut -d '.' -f1)
+    newVelCol=$(echo "$newVeloCol" | cut -d '.' -f1)
+
+#INTERCANVIAR EL VALOR DEL PARAMETRES PER EL VALOR DEL FITXER
+    if [ "$fila" ]
+    then
+        if [ $fila -lt 10 ] || [ $fila -gt 120 ]
+        then
+            echo "El numero de les files ha de ser entre 10 i 120"
+            compExitFila=0
+        else
+            aux=$fila
+            fila=$newFila
+            newFila=$aux    
+            compExitFila=1 
+            let numFila=$fila-1
+            if [ "$porteria" ]
+            then   
+                if [ $porteria -lt 8 ] || [ $porteria -gt $numFila ]
+                then
+                    echo "El numero de la mida de la porteria ha de ser entre 8 i $numFila"
+                    compExitPorteria=0
+                else
+                    aux=$porteria
+                    porteria=$newPorteria
+                    newPorteria=$aux
+                    compExitPorteria=1
+                fi
+            else
+                porteria=$(echo "$newPorteria")
+                compExitPorteria=1
+            fi 
+            if [ "$midaPaleta" ]
+            then
+                if [ $midaPaleta -lt 3 ] || [ $midaPaleta -gt $numFila ]
+                then 
+                    echo "El numero de la mida de la paleta ha de ser entre 3 i $numFila"
+                    compExitMidPal=0
+                else 
+                    aux=$midaPaleta
+                    midaPaleta=$newMidaPaleta
+                    newMidaPaleta=$aux
+                    compExitMidPal=1
+                fi
+            else
+                midaPaleta=$(echo "$newMidaPaleta")
+                compExitMidPal=1
+            fi
+        fi
+    else
+        fila=$(echo "$newFila")
+        compExitFila=1
+        porteria=$(echo "$newPorteria")
+        compExitPorteria=1
+        midaPaleta=$(echo "$newMidaPaleta")
+        compExitMidPal=1
+    fi
+
+    if [ "$columna" ]
+    then
+        if [ $columna -lt 10 ] || [ $columna -gt 36 ]
+        then
+            echo "El numero de les columnes ha de ser entre 10 i 36"
+            compExitColumna=0
+        else
+            aux=$columna
+            columna=$newColumna
+            newColumna=$aux    
+            compExitColumna=1  
+        fi
+    else
+        columna=$(echo "$newColumna")
+        compExitColumna=1
+    fi
+
+    if [ "$posPaleta" ]
+    then
+        if [ $newFilaPal -lt 2 ] || [ $newFilaPal -gt 118 ] 
+        then 
+            echo "El numero de la fila de la paleta ha de ser entre 2 i 118"
+            compExitFilaPaleta=0
+        else 
+            aux=$newFilaPal
+            newFilaPal=$newPosPaletaFila
+            newPosPaletaFila=$aux    
+            compExitFilaPaleta=1  
+        fi
+
+        if [ $newColPal -lt 2 ] || [ $newColPal -gt 35 ]
+        then
+            echo "El numero de la columna de la paleta ha de ser entre 2 i 35" 
+            compExitColumnaPaleta=0
+        else 
+            aux=$newColPal
+            newColPal=$newPosPaletaColumna
+            newPosPaletaColumna=$aux 
+            compExitColumnaPaleta=1
+        fi
+    else
+        newFilaPal=$(echo "$newPosPaletaFila")
+        newColPal=$(echo "$newPosPaletaColumna")
+        compExitColumnaPaleta=1
+        compExitFilaPaleta=1
+    fi
+
+    if [ "$posPilota" ]
+    then
+        if [ $newFilaPil -lt 2 ] || [ $newFilaPil -gt 118 ]   
+        then 
+            echo "El numero de la fila de la pilota ha de ser entre 2 i 118"
+            compPosFilaPilota=0
+        else 
+            aux=$newFilaPil
+            newFilaPil=$newPilotaFila
+            newPilotaFila=$aux 
+            compPosFilaPilota=1
+        fi
+        if [ $newColPil -lt 2 ] || [ $newColPil -gt 35 ] 
+        then 
+            echo "El numero de la columna de la pilota ha de ser entre 2 i 35"
+            compPosColPilota=0
+        else 
+            aux=$newColPil
+            newColPil=$newPilotaColumna
+            newPilotaColumna=$aux 
+            compPosColPilota=1
+        fi
+        if [ $newVelFil -lt -10 ] || [ $newVelFil -gt 10 ]
+        then 
+            echo "El numero de la velocitat fila de la pilota ha de ser entre -1.0 i 1.0"
+            compVelFilaPilota=0
+        else 
+            aux=$newVelFil
+            newVelFil=$newPilotaVelFila
+            newPilotaVelFila=$aux
+            newPilotaVeloFila=$(echo "scale=1; $newPilotaVelFila"/10 | bc)
+            compVelFilaPilota=1
+        fi
+        if [ $newVelCol -lt -10 ] || [ $newVelCol -gt 10 ]
+        then 
+            echo "El numero de la velocitat columna de la pilota ha de ser entre -1.0 i 1.0"
+            compVelColPilota=0
+        else 
+            aux=$newVelCol
+            newVelCol=$newPilotaVelColumna
+            newPilotaVelColumna=$aux 
+            newPilotaVeloColumna=$(echo "scale=1; $newPilotaVelColumna"/10 | bc)
+            compVelColPilota=1
+        fi
+    else
+        newFilaPil=$(echo "$newPilotaFila")
+        newColPil=$(echo "$newPilotaColumna")
+        newVelFil=$(echo "$newPilotaVelFila")
+        newPilotaVeloFila=$(echo "$newVelFil")
+        newVelCol=$(echo "$newPilotaVelColumna")
+        newPilotaVeloColumna=$(echo "$newVelCol")
+        compVelColPilota=1 
+        compVelFilaPilota=1 
+        compPosColPilota=1  
+        compPosFilaPilota=1      
+    fi
+
+#SI ELS VALORS ESTAN FORA DEL RANG, MISSATGE D'ERROR, SI ESTAN DINS DEL RANG, HO POSEM AL FITXER
+    if [ $compExitFila -eq 0 ] || [ $compExitColumna -eq 0 ] || [ $compExitPorteria -eq 0 ] || [ $compExitMidPal -eq 0 ] || [ $compExitFilaPaleta -eq 0 ] || [ $compExitColumnaPaleta -eq 0 ] || [ $compPosFilaPilota -eq 0 ] || [ $compPosColPilota -eq 0 ] || [ $compVelFilaPilota -eq 0 ] || [ $compVelColPilota -eq 0 ]  
+    then
+        exit 1
+    else
+        echo -e "$newFila $newColumna $newPorteria\n$newPosPaletaFila $newPosPaletaColumna $newMidaPaleta\n$newPilotaFila $newPilotaColumna $newPilotaVeloFila $newPilotaVeloColumna" > $nomFitxer
+        cat $nomFitxer
+    fi
+else
+
+#COMPROVAR SI NO EXISTEIXEN
+    if [ $existFila -eq 0 ]
+    then
+        read -p "Has d'introduïr un valor per a -f " fila
+    fi
+    if [ $existColumna -eq 0 ]
+    then
+        read -p "Has d'introduïr un valor per a -c " columna       
+    fi
+    if [ $existPorteria -eq 0 ]
+    then
+        read -p "Has d'introduïr un valor per a -p " porteria         
+    fi
+    if [ $existPosPaleta -eq 0 ]
+    then
+        read -p "Has d'introduïr un valor per a -0 " posPaleta        
+    fi
+    if [ $existMidaPaleta -eq 0 ]
+    then
+        read -p "Has d'introduïr un valor per a -m " midaPaleta   
+    fi
+    if [ $existPosPilota -eq 0 ]
+    then
+        read -p "Has d'introduïr un valor per a -1 " posPilota
+    fi
+
+#AGAFAR LES DADES AMB DOS O MES VALORS I INTRODUIR-LOS EN VARIABLES
+    paleta=$(echo $posPaleta | tr ',' ' ')
+    filaPal=$(echo "$paleta" | cut -d ' ' -f1)
+    colPal=$(echo "$paleta" | cut -d ' ' -f2)
+    pilota=$(echo $posPilota | tr ',' ' ')
+    filaPil=$(echo "$posPilota" | cut -d ',' -f1)
+    colPil=$(echo "$posPilota" | cut -d ',' -f2)
+    velFila=$(echo "$posPilota" | cut -d ',' -f3)
+    velColumna=$(echo "$posPilota" | cut -d ',' -f4)
+    veloFil=$(echo "$velFila*10" | bc)
+    veloCol=$(echo "$velColumna*10" | bc)
+    velFil=$(echo "$veloFil" | cut -d '.' -f1)
+    velCol=$(echo "$veloCol" | cut -d '.' -f1)
+
+#COMPROVAR ELS LIMITS
+    if [ $fila -lt 10 ] || [ $fila -gt 120 ]
+    then 
+        compFila=0
+    else 
+        compFila=1
+    fi  
+
+    if [ $columna -lt 10 ] || [ $columna -gt 36 ]
+    then 
+        compCol=0
+    else 
+        compCol=1
+    fi
+
+    let numFila=$fila-1
+    if [ $porteria -lt 8 ] || [ $porteria -gt $numFila ]
+    then 
+        compPort=0
+    else 
+        compPort=1
+    fi
+
+    if [ $filaPal -lt 2 ] || [ $filaPal -gt 118 ] 
+    then 
+        compFilaPaleta=0
+    else 
+        compFilaPaleta=1
+    fi
+    if [ $colPal -lt 2 ] || [ $colPal -gt 35 ]
+    then 
+        compColumnaPaleta=0
+    else 
+        compColumnaPaleta=1
+    fi
+
+    if [ $midaPaleta -lt 3 ] || [ $midaPaleta -gt $numFila ]
+    then 
+        compMidPal=0
+    else 
+        compMidPal=1
+    fi
+
+    if [ $filaPil -lt 2 ] || [ $filaPil -gt 118 ]   
+    then 
+        compPosFilaPilota=0
+    else 
+        compPosFilaPilota=1
+    fi
+    if [ $colPil -lt 2 ] || [ $colPil -gt 35 ] 
+    then 
+        compPosColPilota=0
+    else 
+        compPosColPilota=1
+    fi
+    if [ $velFil -lt -10 ] || [ $velFil -gt 10 ]
+    then 
+        compVelFilaPilota=0
+    else 
+        compVelFilaPilota=1
+    fi
+    if [ $velCol -lt -10 ] || [ $velCol -gt 10 ]
+    then 
+        compVelColPilota=0
+    else 
+        compVelColPilota=1
+    fi
+
+#MISSATGE D'ERRORS DE LIMITS
+    if [ $compFila -ne 1 ] || [ $compCol -ne 1 ] || [ $compPort -ne 1 ] || [ $compFilaPaleta -ne 1 ] || [ $compColumnaPaleta -ne 1 ] || [ $compMidPal -ne 1 ] || [ $compPosFilaPilota -ne 1 ] || [ $compPosColPilota -ne 1 ] || [ $compVelFilaPilota -ne 1 ] || [ $compVelColPilota -ne 1 ]
+    then
+        nFit=0;
+        if [ $compFila -eq 0 ]
+        then 
+            echo "El numero de les files ha de ser entre 10 i 36"
+        else 
+	    if [ $compPort -eq 0 ]
+	    then
+	        echo "El numero de la mida de la porteria ha de ser entre 8 i $numFila"
+	    fi
+	    if [ $compMidPal -eq 0 ]
+	    then
+	        echo "El numero de la mida de la paleta ha de ser entre 3 i $numFila"
+	    fi
+        fi
+        if [ $compCol -eq 0 ]
+        then 
+	    echo "El numero de les columnes ha de ser entre 10 i 120"
+        fi
+        if [ $compFilaPaleta -eq 0 ]
+        then 
+	    echo "El numero de la fila de la paleta ha de ser entre 2 i 118"
+        fi
+        if [ $compColumnaPaleta -eq 0 ]
+        then 
+            echo "El numero de la columna de la paleta ha de ser entre 2 i 35"
+        fi
+        if [ $compPosFilaPilota -eq 0 ]
+        then 
+            echo "El numero de la fila de la pilota ha de ser entre 2 i 118"
+        fi
+        if [ $compPosColPilota -eq 0 ]
+        then 
+            echo "El numero de la columna de la pilota ha de ser entre 2 i 35"
+        fi
+        if [ $compVelFilaPilota -eq 0 ]
+        then 
+            echo "El numero de la velocitat fila de la pilota ha de ser entre -1.0 i 1.0"
+        fi
+        if [ $compVelColPilota -eq 0 ]
+        then 
+	    echo "El numero de la velocitat columna de la pilota ha de ser entre -1.0 i 1.0"
+        fi
+    else
+        nFit=1
+        echo -e "$fila $columna $porteria\n$filaPal $colPal $midaPaleta\n$pilota" > $nomFitxer
+    fi
+
+#MES PILOTES(MAX 9)
+    shift $(($OPTIND - 1))
+    pilotes=$*
+
+    for i in $pilotes
+    do
+        echo -e "$i" | tr ',' ' ' >> $nomFitxer
+    done
+
+    numLinies=$(cat "$nomFitxer" | wc -l)
+    if [ $numLinies -gt 11 ]
+    then
+        echo "El nombre maxim de pilotes es 9"
+        rm $nomFitxer
+        exit 1 
+    fi
+
+    if [ $nFit -eq 1 ]
+    then
+         cat $nomFitxer
+    fi
+fi
